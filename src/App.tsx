@@ -1,4 +1,4 @@
-import './App.css';
+import './App.css'
 
 export const App = () => {
   return (
@@ -9,5 +9,5 @@ export const App = () => {
         </h1>
       </header>
     </div>
-  );
+  )
 }

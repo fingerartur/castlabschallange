@@ -26,7 +26,20 @@
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "semi": "off",
+      "@typescript-eslint/semi": ["error", "never"],
+      "indent": "off",
+      "@typescript-eslint/indent": ["error", 2],
+      "comma-dangle": "off",
+      "@typescript-eslint/comma-dangle": [
+        "error",
+        "always-multiline"
+      ],
+      "quotes": "off",
+      "@typescript-eslint/quotes": [ "error", "single"]
+    }
   },
   "browserslist": {
     "production": [
