@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import './App.css'
 import { arrayBufferToHexString } from './parser/hex'
+import { parseIsobmff } from './parser/parser'
 
 const MP4_URI = 'http://demo.castlabs.com/tmp/text0.mp4'
 
@@ -18,6 +19,10 @@ export const App = () => {
     const hex = arrayBufferToHexString(binary)
 
     console.info('Hex representation:', hex.substring(0, 1000))
+
+    const boxes = parseIsobmff(hex)
+
+    console.info('Parsed boxes', boxes)
   }
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export const App = () => {
     <div className="App">
       <header className="App-header">
         <h1>
-        ISOBMFF Micro Parser (Cast Labs Challenge)
+          ISOBMFF Micro Parser (Cast Labs Challenge)
         </h1>
         <p>URI: {uri}</p>
         <p style={{ fontStyle: 'italic' }}>Open Developer Console to view info about this file.</p>
