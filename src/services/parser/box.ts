@@ -90,10 +90,8 @@ export const filterMdat = (boxes: Box[]): Box[] => {
   return result
 }
 
-export const printMdatBoxes = (boxes: Box[]) => {
-  const mdat = filterMdat(boxes)
-
-  const text = mdat.map(box => {
+export const printBoxData = (boxes: Box[]) => {
+  const text = boxes.map(box => {
     const data = box.data ? stringFromHexCharCode(box.data) : ''
     return `${box.type}, byte index: ${box.position}, size: ${box.size} B\n\n${data}`
   }).join('\n')
