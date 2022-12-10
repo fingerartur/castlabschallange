@@ -1,5 +1,22 @@
-import { hexToBinary } from './hex'
+import { hexToBinary, numberToHex } from './hex'
 import { parseIsobmff } from './parser'
+
+/**
+ * Generated media file of nested MOOF boxes, ending with XOXO box
+ * @param levels how many levels of nesting
+ */
+const generatedNestedMediaFile = (levels: number) => {
+  const codeXoxo = '786f786f'
+  const codeMoof = '6d6f6f66'
+  let hex = `00000008${codeXoxo}`
+
+  for (let i = 0; i < levels - 1; i++) {
+    const size = hex.length / 2 + 8
+    hex = `${numberToHex(size).padStart(8, '0')}${codeMoof}${hex}`
+  }
+
+  return hex
+}
 
 describe('ISOBMFF parser', () => {
   it('can parse empty media file', () => {
@@ -126,6 +143,14 @@ describe('ISOBMFF parser', () => {
       size: 8,
       type: 'xoxo',
     }])
+  })
+
+  it('throws when nesting is too deep', () => {
+    expect(() => {
+      const hex = generatedNestedMediaFile(1010)
+      const binary = hexToBinary(hex)
+      parseIsobmff(binary)
+    }).toThrow('Media file has too deeply nested boxes - more than 1000 levels')
   })
 
   it('throw when media file is invalid', () => {

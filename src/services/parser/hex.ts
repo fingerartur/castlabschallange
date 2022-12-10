@@ -22,3 +22,12 @@ export const hexToBinary = (hex: string): Uint8Array => {
 
   return new Uint8Array(values)
 }
+
+/**
+ * Convert number to hex
+ * @param num number
+ * @returns hex (without 0x prefix ... e.g. a1)
+ */
+export const numberToHex = (num: number): string => {
+  return Number(num).toString(16)
+}

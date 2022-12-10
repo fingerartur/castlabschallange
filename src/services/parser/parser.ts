@@ -2,6 +2,11 @@ import { binaryToNumber, binaryToText } from './binary'
 import { Box, isNodeBox } from './box'
 
 /**
+ * Max supported depth of nesting of boxes
+ */
+const BOX_MAX_NESTING_DEPTH = 1000
+
+/**
  * Size of one box header item in bytes
  */
 const BOX_HEADER_ITEM_BYTE_SIZE = 4
@@ -98,15 +103,25 @@ const readBoxBody = (binary: Uint8Array, index: number, byteSize: number): Uint8
   return copy(binary, bodyInterval)
 }
 
+type ParseInfo = {
+  depth: number
+}
+
 /**
  * Parse ISOBMFF file
+ *
+ * Supports max box nesting max 1000 boxes deep.
  *
  * https://en.wikipedia.org/wiki/ISO_base_media_file_format#File_type_box
  *
  * @param {string} hex hex string representation of ISOBMFF media file data
  * @returns {Box[]} structure of the ISOBMFF file (array of boxes with optional nested boxes)
  */
-export const parseIsobmff = (binary: Uint8Array): Box[] => {
+export const parseIsobmff = (binary: Uint8Array, info: ParseInfo = { depth: 1 }): Box[] => {
+  if (info.depth > BOX_MAX_NESTING_DEPTH) {
+    throw new Error(`Media file has too deeply nested boxes - more than ${BOX_MAX_NESTING_DEPTH} levels`)
+  }
+
   const boxes: Box[] = []
   /**
    * Index in binary data
@@ -126,7 +141,7 @@ export const parseIsobmff = (binary: Uint8Array): Box[] => {
     // TODO memory optimization, do not copy data?
     const data = readBoxBody(binary, index, size)
     if (isNodeBox(box)) {
-      box.children = parseIsobmff(data)
+      box.children = parseIsobmff(data, { depth: info.depth + 1 })
     } else {
       box.data = data
     }
