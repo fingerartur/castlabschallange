@@ -30,6 +30,11 @@ const byteSizeToHexSize = (size: number) => {
   return size * 2
 }
 
+const hexSizeToByteSize = (size: number) => {
+  // one byte is represented by 2 hex chars
+  return size / 2
+}
+
 const cut = (text: string, interval: Interval) => {
   return text.substring(interval.start, interval.end + 1)
 }
@@ -91,6 +96,7 @@ export const parseIsobmff = (hex: string): Box[] => {
     const data = readBoxBody(hex, index, size)
 
     const box: Box = {
+      position: hexSizeToByteSize(index),
       size,
       type,
     }

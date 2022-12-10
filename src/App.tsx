@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import './App.css'
+import { printBoxes, printMdatBoxes } from './parser/box'
 import { arrayBufferToHexString } from './parser/hex'
 import { parseIsobmff } from './parser/parser'
 
@@ -18,11 +19,20 @@ export const App = () => {
     const binary = await response.arrayBuffer()
     const hex = arrayBufferToHexString(binary)
 
-    console.info('Hex representation:', hex.substring(0, 1000))
+    // console.info('Hex representation:', hex.substring(0, 1000))
 
     const boxes = parseIsobmff(hex)
 
-    console.info('Parsed boxes', boxes)
+    console.info('Media file:', uri)
+    console.info('Media file structure:')
+    printBoxes(boxes)
+    console.info('')
+
+    console.info('MDAT data boxes:')
+    printMdatBoxes(boxes)
+    console.info('')
+
+    console.info('Debug:', boxes)
   }
 
   useEffect(() => {

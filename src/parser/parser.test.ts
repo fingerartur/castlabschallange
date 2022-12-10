@@ -14,6 +14,7 @@ describe('ISOBMFF parser', () => {
     const result = parseIsobmff(hex)
 
     expect(result).toStrictEqual([{
+      position: 0,
       data: body1,
       size: 20,
       type: 'faak',
@@ -31,10 +32,12 @@ describe('ISOBMFF parser', () => {
     const result = parseIsobmff(hex)
 
     expect(result).toStrictEqual([{
+      position: 0,
       data: body1,
       size: 20,
       type: 'faak',
     },{
+      position: 20,
       data: body2,
       size: 10,
       type: 'lolo',
