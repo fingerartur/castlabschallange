@@ -1,15 +1,14 @@
+import { binaryToNumber, binaryToText } from './binary'
 import { Box, isNodeBox } from './box'
-import { hexToNumber, hexToText } from './hex'
 
 /**
- * Size of one box header item (4B)
- * (4 bytes = 8 hex chars)
+ * Size of one box header item in bytes
  */
-const BOX_HEADER_ITEM_SIZE_HEX = 8
+const BOX_HEADER_ITEM_BYTE_SIZE = 4
 /**
- * Size of the whole header (8B = 16 hex chars)
+ * Size of the whole box header in bytes
  */
-const BOX_HEADER_SIZE_HEX = BOX_HEADER_ITEM_SIZE_HEX * 2
+const BOX_HEADER_BYTE_SIZE = BOX_HEADER_ITEM_BYTE_SIZE * 2
 
 type Interval = {
   start: number
@@ -30,90 +29,73 @@ const interval = (index: number, size: number): Interval => {
 }
 
 /**
- * one byte is represented by 2 hex chars
- */
-const BYTE_TO_HEX_RATIO = 2
-
-/**
- * Convert byte size to size in hex chars
- */
-const byteSizeToHexSize = (size: number) => {
-  return size * BYTE_TO_HEX_RATIO
-}
-
-/**
- * Convert size in hex chars to byte size
- */
-const hexSizeToByteSize = (size: number) => {
-  return size / BYTE_TO_HEX_RATIO
-}
-
-/**
- * Cut a substring
+ * Copy a slice of binary data
  *
- * @param text - text
- * @param interval - which part of the text to cut (both start and end included)
+ * @param binary
+ * @param interval
+ * @returns slice of binary data in interval (including start and end)
  */
-const cut = (text: string, interval: Interval) => {
-  return text.substring(interval.start, interval.end + 1)
+const copy = (binary: Uint8Array, interval: Interval): Uint8Array => {
+  return binary.slice(interval.start, interval.end + 1)
 }
 
 /**
- * Read item from box header
+ * Read item from box header as binary
  *
- * @param hex media file as hex
+ * @param hex media file
  * @param index where the item starts
+ * @returns 4 bytes of binary
  */
-const readBoxHeaderItem = (hex: string, index: number) => {
-  const itemInterval = interval(index, BOX_HEADER_ITEM_SIZE_HEX)
+const readBoxHeaderItem = (binary: Uint8Array, index: number): Uint8Array => {
+  const itemInterval = interval(index, BOX_HEADER_ITEM_BYTE_SIZE)
 
-  if (itemInterval.end >= hex.length) {
+  if (itemInterval.end >= binary.length) {
     throw new Error('Invalid media file: File contains unfinished box header')
   }
 
-  return cut(hex, itemInterval)
+  return copy(binary, itemInterval)
 }
 
 /**
  * Read box size
  *
- * @param hex media file as hex
- * @param index where the box starts in hex file
+ * @param binary media file
+ * @param index where the box starts in medial file
  */
-const readBoxSize = (hex: string, index: number) => {
-  return readBoxHeaderItem(hex, index)
+const readBoxSize = (binary: Uint8Array, index: number): number => {
+  const item = readBoxHeaderItem(binary, index)
+  return binaryToNumber(item.reverse(), '32-bit')
 }
 
 /**
  * Read box type
  *
- * @param hex media file as hex
- * @param index where the box starts in hex file
+ * @param binary media file
+ * @param index where the box starts in medial file
  */
-const readBoxType = (hex: string, index: number) => {
-  return readBoxHeaderItem(hex, index + BOX_HEADER_ITEM_SIZE_HEX)
+const readBoxType = (binary: Uint8Array, index: number) => {
+  const item = readBoxHeaderItem(binary, index + BOX_HEADER_ITEM_BYTE_SIZE)
+  return binaryToText(item, 'utf-8')
 }
 
 /**
  * Read box body
  *
- * @param hex media file as hex
+ * @param binary media file
  * @param index where the box starts in hex file
- * @param byteSize size of the box in bytes (1 byte == 2 hex chars)
+ * @param byteSize size of the box in bytes
  */
-const readBoxBody = (hex: string, index: number, byteSize: number) => {
-  const size = byteSizeToHexSize(byteSize)
-
-  if (size < BOX_HEADER_SIZE_HEX) {
+const readBoxBody = (binary: Uint8Array, index: number, byteSize: number): Uint8Array => {
+  if (byteSize < BOX_HEADER_BYTE_SIZE) {
     throw new Error('Invalid media file: Box size is too small')
-  } else if (size === BOX_HEADER_SIZE_HEX) {
-    return ''
+  } else if (byteSize === BOX_HEADER_BYTE_SIZE) {
+    return new Uint8Array()
   }
 
-  const startIndex = index + BOX_HEADER_SIZE_HEX
-  const bodyInterval = interval(startIndex, size - BOX_HEADER_SIZE_HEX)
+  const startIndex = index + BOX_HEADER_BYTE_SIZE
+  const bodyInterval = interval(startIndex, byteSize - BOX_HEADER_BYTE_SIZE)
 
-  return cut(hex, bodyInterval)
+  return copy(binary, bodyInterval)
 }
 
 /**
@@ -124,26 +106,25 @@ const readBoxBody = (hex: string, index: number, byteSize: number) => {
  * @param {string} hex hex string representation of ISOBMFF media file data
  * @returns {Box[]} structure of the ISOBMFF file (array of boxes with optional nested boxes)
  */
-export const parseIsobmff = (hex: string): Box[] => {
+export const parseIsobmff = (binary: Uint8Array): Box[] => {
   const boxes: Box[] = []
   /**
-   * Index in hex string
+   * Index in binary data
    */
   let index = 0
 
-  while (index < hex.length) {
-    const sizeHex = readBoxSize(hex, index)
-    const size = hexToNumber(sizeHex)
-    const typeHex = readBoxType(hex, index)
-    const type = hexToText(typeHex)
-    const data = readBoxBody(hex, index, size)
+  while (index < binary.length) {
+    const size = readBoxSize(binary, index)
+    const type = readBoxType(binary, index)
 
     const box: Box = {
-      position: hexSizeToByteSize(index),
+      position: index,
       size,
       type,
     }
 
+    // TODO memory optimization, do not copy data?
+    const data = readBoxBody(binary, index, size)
     if (isNodeBox(box)) {
       box.children = parseIsobmff(data)
     } else {
@@ -152,7 +133,7 @@ export const parseIsobmff = (hex: string): Box[] => {
 
     boxes.push(box)
 
-    index += byteSizeToHexSize(box.size)
+    index += box.size
   }
 
   return boxes

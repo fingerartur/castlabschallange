@@ -1,15 +1,12 @@
-import { binaryToHex } from './hex'
 
 /**
- * Fetch file and convert data from body to hex
+ * Fetch file and get binary data from it
  */
-export const fetchHex = async (uri: string) => {
+export const fetchBinary = async (uri: string) => {
   const response = await fetch(uri, {
     method: 'GET',
   })
 
   const binary = await response.arrayBuffer()
-  const hex = binaryToHex(binary)
-
-  return hex
+  return new Uint8Array(binary)
 }

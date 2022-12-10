@@ -1,21 +1,22 @@
+import { hexToBinary } from './hex'
 import { parseIsobmff } from './parser'
 
 describe('ISOBMFF parser', () => {
   it('can parse empty media file', () => {
-    const result = parseIsobmff('')
+    const result = parseIsobmff(new Uint8Array())
     expect(result).toStrictEqual([])
   })
 
   it('can parse media file with 1 box', () => {
     const body1 = Array(24).fill(1).join('')
     // size 20, faak
-    const hex = '000000146661616b' + body1
+    const binary = hexToBinary('000000146661616b' + body1)
 
-    const result = parseIsobmff(hex)
+    const result = parseIsobmff(binary)
 
     expect(result).toStrictEqual([{
       position: 0,
-      data: body1,
+      data: hexToBinary(body1),
       size: 20,
       type: 'faak',
     }])
@@ -29,16 +30,17 @@ describe('ISOBMFF parser', () => {
       // size 10, lolo
       + '0000000a6c6f6c6f' + body2
 
-    const result = parseIsobmff(hex)
+    const binary = hexToBinary(hex)
+    const result = parseIsobmff(binary)
 
     expect(result).toStrictEqual([{
       position: 0,
-      data: body1,
+      data: hexToBinary(body1),
       size: 20,
       type: 'faak',
     },{
       position: 20,
-      data: body2,
+      data: hexToBinary(body2),
       size: 10,
       type: 'lolo',
     }])
@@ -54,7 +56,9 @@ describe('ISOBMFF parser', () => {
       // size 8, xoxo
       + `00000008${codeXoxo}`
 
-    const result = parseIsobmff(hex)
+
+    const binary = hexToBinary(hex)
+    const result = parseIsobmff(binary)
 
     expect(result).toMatchObject([{
       size: 100,
@@ -70,7 +74,7 @@ describe('ISOBMFF parser', () => {
         },
       ],
     },{
-      data: '',
+      data: new Uint8Array(),
       size: 8,
       type: 'xoxo',
     }])
@@ -93,7 +97,8 @@ describe('ISOBMFF parser', () => {
       // [8 B, xoxo, empty]
       + `00000008${codeXoxo}`
 
-    const result = parseIsobmff(hex)
+    const binary = hexToBinary(hex)
+    const result = parseIsobmff(binary)
 
     expect(result).toMatchObject([{
       size: 100,
@@ -117,7 +122,7 @@ describe('ISOBMFF parser', () => {
         },
       ],
     },{
-      data: '',
+      data: new Uint8Array(),
       size: 8,
       type: 'xoxo',
     }])
@@ -125,7 +130,7 @@ describe('ISOBMFF parser', () => {
 
   it('throw when media file is invalid', () => {
     expect(() => {
-      parseIsobmff('hello')
+      parseIsobmff(new Uint8Array([7,6]))
     }).toThrow()
   })
 })

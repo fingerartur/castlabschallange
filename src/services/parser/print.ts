@@ -1,5 +1,5 @@
+import { binaryToText } from './binary'
 import { Box, toStringBoxes } from './box'
-import { hexToText } from './hex'
 
 /**
  * Print media file box structure and content of it's MDAT boxes
@@ -29,7 +29,8 @@ const printBoxes = (boxes: Box[]) => {
  */
 const printBoxData = (boxes: Box[]) => {
   const text = boxes.map(box => {
-    const data = box.data ? hexToText(box.data) : ''
+    const data = box.data ? binaryToText(box.data, 'utf-8') : ''
+
     return `${box.type}, byte index: ${box.position}, size: ${box.size} B\n\n${data}`
   }).join('\n')
 

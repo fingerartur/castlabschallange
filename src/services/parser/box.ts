@@ -1,4 +1,4 @@
-import { hexToText } from './hex'
+import { binaryToText } from './binary'
 
 /**
  * Box is a basic building block of ISOBMFF media file. First 8 bytes form the header with
@@ -9,11 +9,11 @@ import { hexToText } from './hex'
  */
 export type Box = {
   /**
-   * Box data as hex string
+   * Binary box data
    *
    * Only Leaf box can have data
    */
-  data?: string
+  data?: Uint8Array
   /**
    * Size in bytes that the box takes up (data + 8B header)
    *
@@ -21,11 +21,11 @@ export type Box = {
    */
   size: number
   /**
-   * Index of the byte in binary file where this box starts, starting at 0.
+   * Index of the byte in binary file where this box starts, starting at 0
    */
   position: number
   /**
-   * Box type as a string (binary converted to string via char codes)
+   * Box type as a string (binary converted to string via UTF-8)
    *
    * Type info is stored in the second 4 bytes of the header
    */
@@ -33,7 +33,7 @@ export type Box = {
   /**
    * Child boxes
    *
-   * Only Node box can have children
+   * Only Node boxes can have children
    */
   children?: Box[]
 }
@@ -96,9 +96,10 @@ export const filterMdat = (boxes: Box[]): Box[] => {
 /**
  * @returns box data converted to text
  */
-export const boxDataToText = (boxes: Box[]) => {
-  const data = boxes.map(box => box.data)
-    .filter(Boolean) as string[]
+export const boxDataToText = (boxes: Box[]): string[] => {
+  const texts = boxes.map(box => {
+    return box.data ? binaryToText(box.data, 'utf-8') : ''
+  })
 
-  return data.map(hexToText)
+  return texts
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { extractImagesFromXmlFiles } from '../services/image/image'
 import { Image } from '../services/image/types'
 import { boxDataToText, filterMdat } from '../services/parser/box'
-import { fetchHex } from '../services/parser/loader'
+import { fetchBinary } from '../services/parser/loader'
 import { parseIsobmff } from '../services/parser/parser'
 import { printInfo } from '../services/parser/print'
 
@@ -17,9 +17,7 @@ export const useAnalyzeIsobmff = (uri: string) => {
 
   const fetchFile = async (uri: string ) => {
     try {
-      const hex = await fetchHex(uri)
-      // console.info('Hex representation:', hex.substring(0, 1000))
-      return hex
+      return await fetchBinary(uri)
     } catch (error) {
       setError('Failed to fetch media file')
       throw error
@@ -35,9 +33,9 @@ export const useAnalyzeIsobmff = (uri: string) => {
 
     console.info('Processing uri', uri)
 
-    const hex = await fetchFile(uri)
+    const binary = await fetchFile(uri)
 
-    const boxes = parseIsobmff(hex)
+    const boxes = parseIsobmff(binary)
     const mdatBoxes = filterMdat(boxes)
 
     printInfo(uri, boxes, mdatBoxes)

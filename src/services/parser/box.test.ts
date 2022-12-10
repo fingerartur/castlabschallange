@@ -16,7 +16,7 @@ describe('box', () => {
         ],
       },{
         position: 100,
-        data: '',
+        data: new Uint8Array(),
         size: 8,
         type: 'boxo',
       }]
@@ -40,12 +40,12 @@ describe('box', () => {
             position: 54,
             size: 46,
             type: 'mdat',
-            data: Array(38 * 2).fill(1).join(''),
+            data: new Uint8Array(Array(38).fill(1)),
           },
         ],
       },{
         position: 100,
-        data: '',
+        data: new Uint8Array(),
         size: 8,
         type: 'mdat',
       }]
@@ -57,10 +57,10 @@ describe('box', () => {
           position: 54,
           size: 46,
           type: 'mdat',
-          data: Array(38 * 2).fill(1).join(''),
+          data: new Uint8Array(Array(38).fill(1)),
         },{
           position: 100,
-          data: '',
+          data: new Uint8Array(),
           size: 8,
           type: 'mdat',
         },
