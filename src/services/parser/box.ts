@@ -1,7 +1,9 @@
-import { stringFromHexCharCode } from './hex'
+import { hexToText } from './hex'
 
 /**
- * Box is a basic building block of ISOBMFF media file
+ * Box is a basic building block of ISOBMFF media file. First 8 bytes form the header with
+ * size and type metadata, the rest is payload. Payload can contain either other boxes
+ * or binary data, depending on box type.
  *
  * [[ 4B size ][ 4B type ][ ... data ...]]
  */
@@ -36,6 +38,11 @@ export type Box = {
   children?: Box[]
 }
 
+/**
+ * Box types
+ *
+ * There are more box types, this is just a few of them
+ */
 enum BoxType {
   MDAT = 'mdat',
   MOOF = 'moof',
@@ -43,19 +50,15 @@ enum BoxType {
 }
 
 /**
- * Checks if box is "node" aka has children
+ * Checks if box is "node" i.e. has children
  */
 export const isNodeBox = (box: Box) => {
   return [BoxType.MOOF, BoxType.TRAF].includes(box.type as BoxType)
 }
 
 /**
- * Prints boxes to console
+ * Recursively convert boxes to string (for overview purposes)
  */
-export const printBoxes = (boxes: Box[]) => {
-  console.info(toStringBoxes(boxes))
-}
-
 export const toStringBoxes = (boxes: Box[], indent = '') => {
   const result = boxes.map(box => {
     const prefix = indent.length > 0 ? `${indent}-` : ''
@@ -73,7 +76,7 @@ export const toStringBoxes = (boxes: Box[], indent = '') => {
 }
 
 /**
- * Filter out only MDAT boxes
+ * @returns MDAT boxes
  */
 export const filterMdat = (boxes: Box[]): Box[] => {
   const result: Box[] = []
@@ -90,11 +93,12 @@ export const filterMdat = (boxes: Box[]): Box[] => {
   return result
 }
 
-export const printBoxData = (boxes: Box[]) => {
-  const text = boxes.map(box => {
-    const data = box.data ? stringFromHexCharCode(box.data) : ''
-    return `${box.type}, byte index: ${box.position}, size: ${box.size} B\n\n${data}`
-  }).join('\n')
+/**
+ * @returns box data converted to text
+ */
+export const boxDataToText = (boxes: Box[]) => {
+  const data = boxes.map(box => box.data)
+    .filter(Boolean) as string[]
 
-  console.info(text)
+  return data.map(hexToText)
 }

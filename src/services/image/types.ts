@@ -1,9 +1,9 @@
+/**
+ * Image
+ */
 export type Image = {
   id: string
-  /**
-   * Data base64 encoded data
-   */
-  data: string
+  dataUrl: string
   encoding: 'base64'
   /**
    * e.g. png (lowercase)

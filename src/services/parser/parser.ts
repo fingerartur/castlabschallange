@@ -1,5 +1,5 @@
 import { Box, isNodeBox } from './box'
-import { hexToNumber, stringFromHexCharCode } from './hex'
+import { hexToNumber, hexToText } from './hex'
 
 /**
  * Size of one box header item (4B)
@@ -17,6 +17,10 @@ type Interval = {
   size: number
 }
 
+/**
+ * Closed interval [start, end]
+ * (both start and end indices are included)
+ */
 const interval = (index: number, size: number): Interval => {
   return {
     start: index,
@@ -25,20 +29,41 @@ const interval = (index: number, size: number): Interval => {
   }
 }
 
+/**
+ * one byte is represented by 2 hex chars
+ */
+const BYTE_TO_HEX_RATIO = 2
+
+/**
+ * Convert byte size to size in hex chars
+ */
 const byteSizeToHexSize = (size: number) => {
-  // one byte is represented by 2 hex chars
-  return size * 2
+  return size * BYTE_TO_HEX_RATIO
 }
 
+/**
+ * Convert size in hex chars to byte size
+ */
 const hexSizeToByteSize = (size: number) => {
-  // one byte is represented by 2 hex chars
-  return size / 2
+  return size / BYTE_TO_HEX_RATIO
 }
 
+/**
+ * Cut a substring
+ *
+ * @param text - text
+ * @param interval - which part of the text to cut (both start and end included)
+ */
 const cut = (text: string, interval: Interval) => {
   return text.substring(interval.start, interval.end + 1)
 }
 
+/**
+ * Read item from box header
+ *
+ * @param hex media file as hex
+ * @param index where the item starts
+ */
 const readBoxHeaderItem = (hex: string, index: number) => {
   const itemInterval = interval(index, BOX_HEADER_ITEM_SIZE_HEX)
 
@@ -49,14 +74,33 @@ const readBoxHeaderItem = (hex: string, index: number) => {
   return cut(hex, itemInterval)
 }
 
+/**
+ * Read box size
+ *
+ * @param hex media file as hex
+ * @param index where the box starts in hex file
+ */
 const readBoxSize = (hex: string, index: number) => {
   return readBoxHeaderItem(hex, index)
 }
 
+/**
+ * Read box type
+ *
+ * @param hex media file as hex
+ * @param index where the box starts in hex file
+ */
 const readBoxType = (hex: string, index: number) => {
   return readBoxHeaderItem(hex, index + BOX_HEADER_ITEM_SIZE_HEX)
 }
 
+/**
+ * Read box body
+ *
+ * @param hex media file as hex
+ * @param index where the box starts in hex file
+ * @param byteSize size of the box in bytes (1 byte == 2 hex chars)
+ */
 const readBoxBody = (hex: string, index: number, byteSize: number) => {
   const size = byteSizeToHexSize(byteSize)
 
@@ -77,7 +121,7 @@ const readBoxBody = (hex: string, index: number, byteSize: number) => {
  *
  * https://en.wikipedia.org/wiki/ISO_base_media_file_format#File_type_box
  *
- * @param {string} hex hex string representation of ISOBMFF media file file data
+ * @param {string} hex hex string representation of ISOBMFF media file data
  * @returns {Box[]} structure of the ISOBMFF file (array of boxes with optional nested boxes)
  */
 export const parseIsobmff = (hex: string): Box[] => {
@@ -91,8 +135,7 @@ export const parseIsobmff = (hex: string): Box[] => {
     const sizeHex = readBoxSize(hex, index)
     const size = hexToNumber(sizeHex)
     const typeHex = readBoxType(hex, index)
-    const type = stringFromHexCharCode(typeHex)
-    // TODO optimize perf / mem
+    const type = hexToText(typeHex)
     const data = readBoxBody(hex, index, size)
 
     const box: Box = {

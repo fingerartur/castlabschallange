@@ -5,3 +5,6 @@ Micro ISOBMFF parser app
 ```
 yarn && yarn start
 ```
+
+## Architecture
+![](./doc/arch.svg)
