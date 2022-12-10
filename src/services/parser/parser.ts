@@ -1,5 +1,5 @@
 import { binaryToNumber, binaryToText } from './binary'
-import { Box, isNodeBox } from './box'
+import { Box, isDataBox, isNodeBox } from './box'
 
 /**
  * Max supported depth of nesting of boxes
@@ -19,6 +19,15 @@ type Interval = {
   start: number
   end: number
   size: number
+}
+
+/**
+ * Binary data window represent part of binary data in the interval [start, end]
+ */
+type BinaryDataWindow = {
+  data: Uint8Array
+  start: number
+  end: number
 }
 
 /**
@@ -45,62 +54,70 @@ const copy = (binary: Uint8Array, interval: Interval): Uint8Array => {
 }
 
 /**
+ * @param dataWindow part of media file
+ * @returns copy of this part of media file
+ */
+const copyBoxBody = (dataWindow: BinaryDataWindow): Uint8Array => {
+  return dataWindow.data.slice(dataWindow.start, dataWindow.end + 1)
+}
+
+/**
  * Read item from box header as binary
  *
- * @param hex media file
+ * @param dataWindow part of media file
  * @param index where the item starts
  * @returns 4 bytes of binary
  */
-const readBoxHeaderItem = (binary: Uint8Array, index: number): Uint8Array => {
+const readBoxHeaderItem = (dataWindow: BinaryDataWindow, index: number): Uint8Array => {
   const itemInterval = interval(index, BOX_HEADER_ITEM_BYTE_SIZE)
 
-  if (itemInterval.end >= binary.length) {
+  if (itemInterval.end > dataWindow.end) {
     throw new Error('Invalid media file: File contains unfinished box header')
   }
 
-  return copy(binary, itemInterval)
+  return copy(dataWindow.data, itemInterval)
 }
 
 /**
  * Read box size
  *
- * @param binary media file
+ * @param dataWindow part of media file
  * @param index where the box starts in medial file
  */
-const readBoxSize = (binary: Uint8Array, index: number): number => {
-  const item = readBoxHeaderItem(binary, index)
+const readBoxSize = (dataWindow: BinaryDataWindow, index: number): number => {
+  const item = readBoxHeaderItem(dataWindow, index)
   return binaryToNumber(item.reverse(), '32-bit')
 }
 
 /**
  * Read box type
  *
- * @param binary media file
+ * @param dataWindow part of media file
  * @param index where the box starts in medial file
  */
-const readBoxType = (binary: Uint8Array, index: number) => {
-  const item = readBoxHeaderItem(binary, index + BOX_HEADER_ITEM_BYTE_SIZE)
+const readBoxType = (dataWindow: BinaryDataWindow, index: number) => {
+  const item = readBoxHeaderItem(dataWindow, index + BOX_HEADER_ITEM_BYTE_SIZE)
   return binaryToText(item, 'utf-8')
 }
 
 /**
- * Read box body
- *
- * @param binary media file
- * @param index where the box starts in hex file
+ * @param dataWindow part of media file
+ * @param index byte index where the box starts
  * @param byteSize size of the box in bytes
+ *
+ * @returns data window that represents the body of a box. Resulting data window always has some data
+ * in it, if it doesn't `null` is returned.
  */
-const readBoxBody = (binary: Uint8Array, index: number, byteSize: number): Uint8Array => {
-  if (byteSize < BOX_HEADER_BYTE_SIZE) {
+const getBoxBodyWindow = (dataWindow: BinaryDataWindow, index: number, size: number): BinaryDataWindow | null => {
+  if (size < BOX_HEADER_BYTE_SIZE) {
     throw new Error('Invalid media file: Box size is too small')
-  } else if (byteSize === BOX_HEADER_BYTE_SIZE) {
-    return new Uint8Array()
+  } else if (size === BOX_HEADER_BYTE_SIZE) {
+    return null
   }
 
-  const startIndex = index + BOX_HEADER_BYTE_SIZE
-  const bodyInterval = interval(startIndex, byteSize - BOX_HEADER_BYTE_SIZE)
+  const bodyInterval = interval(index + BOX_HEADER_BYTE_SIZE, size - BOX_HEADER_BYTE_SIZE)
 
-  return copy(binary, bodyInterval)
+  return { data: dataWindow.data, start: bodyInterval.start, end: bodyInterval.end}
 }
 
 type ParseInfo = {
@@ -114,10 +131,14 @@ type ParseInfo = {
  *
  * https://en.wikipedia.org/wiki/ISO_base_media_file_format#File_type_box
  *
- * @param {string} hex hex string representation of ISOBMFF media file data
- * @returns {Box[]} structure of the ISOBMFF file (array of boxes with optional nested boxes)
+ * @param binary binary data of ISOBMFF media file
+ * @returns {Box[]} structure of the ISOBMFF file
  */
-export const parseIsobmff = (binary: Uint8Array, info: ParseInfo = { depth: 1 }): Box[] => {
+export const parseIsobmff = (binary: Uint8Array): Box[] => {
+  return _parseIsobmff({ data: binary, start: 0, end: binary.length -1 }, { depth: 1})
+}
+
+export const _parseIsobmff = (dataWindow: BinaryDataWindow, info: ParseInfo): Box[] => {
   if (info.depth > BOX_MAX_NESTING_DEPTH) {
     throw new Error(`Media file has too deeply nested boxes - more than ${BOX_MAX_NESTING_DEPTH} levels`)
   }
@@ -126,11 +147,11 @@ export const parseIsobmff = (binary: Uint8Array, info: ParseInfo = { depth: 1 })
   /**
    * Index in binary data
    */
-  let index = 0
+  let index = dataWindow.start
 
-  while (index < binary.length) {
-    const size = readBoxSize(binary, index)
-    const type = readBoxType(binary, index)
+  while (index <= dataWindow.end) {
+    const size = readBoxSize(dataWindow, index)
+    const type = readBoxType(dataWindow, index)
 
     const box: Box = {
       position: index,
@@ -138,12 +159,14 @@ export const parseIsobmff = (binary: Uint8Array, info: ParseInfo = { depth: 1 })
       type,
     }
 
-    // TODO memory optimization, do not copy data?
-    const data = readBoxBody(binary, index, size)
-    if (isNodeBox(box)) {
-      box.children = parseIsobmff(data, { depth: info.depth + 1 })
-    } else {
-      box.data = data
+    const boxBodyDataWindow = getBoxBodyWindow(dataWindow, index, size)
+
+    if (boxBodyDataWindow != null) {
+      if (isNodeBox(box)) {
+        box.children = _parseIsobmff(boxBodyDataWindow, { depth: info.depth + 1 })
+      } else if (isDataBox(box)) {
+        box.data = copyBoxBody(boxBodyDataWindow)
+      }
     }
 
     boxes.push(box)

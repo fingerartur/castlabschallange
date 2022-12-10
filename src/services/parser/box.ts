@@ -57,6 +57,13 @@ export const isNodeBox = (box: Box) => {
 }
 
 /**
+ * Check if box should contain data
+ */
+export const isDataBox = (box: Box) => {
+  return [BoxType.MDAT].includes(box.type as BoxType)
+}
+
+/**
  * Recursively convert boxes to string (for overview purposes)
  */
 export const toStringBoxes = (boxes: Box[], indent = '') => {

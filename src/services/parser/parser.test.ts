@@ -33,9 +33,22 @@ describe('ISOBMFF parser', () => {
 
     expect(result).toStrictEqual([{
       position: 0,
-      data: hexToBinary(body1),
       size: 20,
       type: 'faak',
+    }])
+  })
+
+  it('should parse binary data of MDAT boxes', () => {
+    const body1 = Array(24).fill(1).join('')
+    // size 20, mdat
+    const binary = hexToBinary('000000146d646174' + body1)
+    const result = parseIsobmff(binary)
+
+    expect(result).toStrictEqual([{
+      position: 0,
+      size: 20,
+      type: 'mdat',
+      data: hexToBinary(body1),
     }])
   })
 
@@ -52,12 +65,10 @@ describe('ISOBMFF parser', () => {
 
     expect(result).toStrictEqual([{
       position: 0,
-      data: hexToBinary(body1),
       size: 20,
       type: 'faak',
     },{
       position: 20,
-      data: hexToBinary(body2),
       size: 10,
       type: 'lolo',
     }])
@@ -91,7 +102,6 @@ describe('ISOBMFF parser', () => {
         },
       ],
     },{
-      data: new Uint8Array(),
       size: 8,
       type: 'xoxo',
     }])
@@ -139,7 +149,6 @@ describe('ISOBMFF parser', () => {
         },
       ],
     },{
-      data: new Uint8Array(),
       size: 8,
       type: 'xoxo',
     }])

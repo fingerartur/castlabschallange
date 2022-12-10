@@ -25,9 +25,9 @@ export const binaryToNumber = (buffer: Uint8Array, wordSize: '32-bit') => {
  * @param encoding text encoding
  * @returns decoded text
  */
-export const binaryToText = (buffer: ArrayBuffer, encoding: 'utf-8') => {
+export const binaryToText = (buffer: Uint8Array, encoding: 'utf-8') => {
   if (encoding === 'utf-8') {
-    return new TextDecoder().decode(new Uint8Array(buffer))
+    return new TextDecoder().decode(buffer)
   }
 
   return ''
