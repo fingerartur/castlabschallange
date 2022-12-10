@@ -1,5 +1,5 @@
+import { Box, isNodeBox } from './box'
 import { hexToNumber, stringFromHexCharCode } from './hex'
-import type { Box } from './types'
 
 /**
  * Size of one box header item (4B)
@@ -55,7 +55,7 @@ const readBoxType = (hex: string, index: number) => {
 const readBoxBody = (hex: string, index: number, byteSize: number) => {
   const size = byteSizeToHexSize(byteSize)
 
-  if (size <= BOX_HEADER_SIZE_HEX) {
+  if (size < BOX_HEADER_SIZE_HEX) {
     throw new Error('Invalid media file: Box size is too small')
   } else if (size === BOX_HEADER_SIZE_HEX) {
     return ''
@@ -86,13 +86,19 @@ export const parseIsobmff = (hex: string): Box[] => {
     const sizeHex = readBoxSize(hex, index)
     const size = hexToNumber(sizeHex)
     const typeHex = readBoxType(hex, index)
+    const type = stringFromHexCharCode(typeHex)
+    // TODO optimize perf / mem
     const data = readBoxBody(hex, index, size)
 
     const box: Box = {
-      data,
       size,
-      type: stringFromHexCharCode(typeHex),
-      typeHex,
+      type,
+    }
+
+    if (isNodeBox(box)) {
+      box.children = parseIsobmff(data)
+    } else {
+      box.data = data
     }
 
     boxes.push(box)

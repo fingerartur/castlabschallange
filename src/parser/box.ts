@@ -6,8 +6,10 @@
 export type Box = {
   /**
    * Box data as hex string
+   *
+   * Only Leaf box can have data
    */
-  data: string
+  data?: string
   /**
    * Size in bytes that the box takes up (data + 8B header)
    *
@@ -15,15 +17,22 @@ export type Box = {
    */
   size: number
   /**
-   * MP4 box type as a string (binary converted to string via char codes)
+   * Box type as a string (binary converted to string via char codes)
    *
    * Type info is stored in the second 4 bytes of the header
    */
   type: string
   /**
-   * MP4 box type as hex
+   * Child boxes
    *
-   * Type info is stored in the second 4 bytes of the header
+   * Only Node box can have children
    */
-  typeHex: string
+  children?: Box[]
+}
+
+/**
+ * Checks if box is "node" aka has children
+ */
+export const isNodeBox = (box: Box) => {
+  return ['moof', 'traf'].includes(box.type)
 }
