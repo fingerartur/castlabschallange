@@ -1,9 +1,19 @@
 .App {
   text-align: center;
+
+}
+
+a, a:visited {
+  color: white;
+}
+
+a:hover {
+  color: #fff8;
 }
 
 .App-main {
-  background-color: #282c34;
+  background: rgb(98,101,101);
+  background: radial-gradient(circle, rgba(98,101,101,1) 43%, rgba(53,54,54,1) 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;

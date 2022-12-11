@@ -18,7 +18,7 @@ export const App = () => {
         <h1>
           ISOBMFF Micro Parser (Cast Labs Challenge)
         </h1>
-        <p>URI: {uri}</p>
+        <p style={{ opacity: 0.6 }}>URI: {uri}</p>
         <p style={{ fontStyle: 'italic' }}>Open Developer Console to view info about this file.</p>
 
         <div style={{ width: '80%' }}>
