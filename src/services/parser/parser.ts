@@ -138,7 +138,7 @@ export const parseIsobmff = (binary: Uint8Array): Box[] => {
   return _parseIsobmff({ data: binary, start: 0, end: binary.length -1 }, { depth: 1})
 }
 
-export const _parseIsobmff = (dataWindow: BinaryDataWindow, info: ParseInfo): Box[] => {
+const _parseIsobmff = (dataWindow: BinaryDataWindow, info: ParseInfo): Box[] => {
   if (info.depth > BOX_MAX_NESTING_DEPTH) {
     throw new Error(`Media file has too deeply nested boxes - more than ${BOX_MAX_NESTING_DEPTH} levels`)
   }
