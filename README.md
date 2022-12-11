@@ -7,6 +7,9 @@ Micro ISOBMFF parser app
 yarn && yarn start
 ```
 
+## Compatibility
+Tested in Chrome version 108.0.5359.71 (MacOS) and Edge version 108.0.1462.42 (Windows)
+
 ## Architecture
 ![](./doc/architecture.svg)
 
