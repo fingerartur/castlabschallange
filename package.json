@@ -2,6 +2,11 @@
   "name": "@finga/isobmff-micro-parser",
   "version": "1.0.0",
   "private": true,
+  "author": {
+    "name": "Artur Finger",
+    "email": "fingerartur@gmail.com",
+    "url": "https://www.linkedin.com/in/artur-finger-790111137/"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
