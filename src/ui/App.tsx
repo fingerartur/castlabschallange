@@ -1,7 +1,7 @@
-import './App.css'
-import { Error } from './error'
-import { useAnalyzeIsobmff } from './hooks'
-import { ImageRow } from './imageRow'
+import './app.css'
+import { Error } from './components/error'
+import { ImageRow } from './components/imageRow'
+import { useAnalyzeIsobmff } from './hooks/hooks'
 
 const MP4_URI = 'http://demo.castlabs.com/tmp/text0.mp4'
 

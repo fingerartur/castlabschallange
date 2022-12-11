@@ -1,7 +1,5 @@
-import { Image } from '../services/image/types'
-
 type Props = {
-  image: Image
+  uri: string
 }
 
 const styleContainer = {
@@ -35,13 +33,13 @@ const styleImage = {
  * Image with a background
  */
 export const ImageUi = (props: Props) => {
-  const { image } = props
+  const { uri } = props
 
   return (
     <div style={styleContainer}>
       <div style={styleBg} />
       <img
-        src={image.dataUrl}
+        src={uri}
         alt=""
         style={styleImage}
       />

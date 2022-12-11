@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { extractImagesFromXmlFiles } from '../services/image/image'
-import { Image } from '../services/image/types'
-import { boxDataToText, filterMdat } from '../services/parser/box'
-import { fetchBinary } from '../services/parser/loader'
-import { parseIsobmff } from '../services/parser/parser'
-import { printInfo } from '../services/parser/print'
+import { extractImagesFromXmlFiles } from '../../services/image/image'
+import { Image } from '../../services/image/types'
+import { boxDataToText, filterMdat } from '../../services/parser/box'
+import { fetchBinary } from '../../services/parser/loader'
+import { parseIsobmff } from '../../services/parser/parser'
+import { printInfo } from '../../services/parser/print'
 
 /**
  * Analyze media file, print info to console and return

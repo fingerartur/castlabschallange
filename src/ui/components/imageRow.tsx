@@ -1,5 +1,5 @@
 import React from 'react'
-import { Image } from '../services/image/types'
+import type { Image } from '../../services/image/types'
 import { ImageUi } from './image'
 import { styleCentered } from './style'
 
@@ -25,7 +25,7 @@ export const ImageRow = React.memo((props: Props) => {
 
   return (
     <>
-      {images.map(image => <ImageUi key={image.id} image={image} />)}
+      {images.map(image => <ImageUi key={image.id} uri={image.dataUrl} />)}
     </>
   )
 })
