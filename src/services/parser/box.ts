@@ -70,7 +70,7 @@ export const toStringBoxes = (boxes: Box[], indent = '') => {
   const result = boxes.map(box => {
     const prefix = indent.length > 0 ? `${indent}-` : ''
 
-    let info = `${prefix}[${box.size} B, ${box.type}]`
+    let info = `${prefix}Box [type: ${box.type}, size: ${box.size} B]`
 
     if (box.children) {
       info = info + '\n' + toStringBoxes(box.children, indent + '   ')

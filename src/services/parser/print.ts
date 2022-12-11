@@ -6,14 +6,8 @@ import { Box, toStringBoxes } from './box'
  */
 export const printInfo = (uri: string, boxes: Box[], mdatBoxes: Box[]) => {
   console.info('Media file:', uri)
-  console.info('Media file structure:')
   printBoxes(boxes)
-  console.info('')
-
-  console.info('MDAT box data:')
   printBoxData(mdatBoxes)
-  console.info('')
-
   console.info('Debug:', boxes)
 }
 
@@ -21,7 +15,7 @@ export const printInfo = (uri: string, boxes: Box[], mdatBoxes: Box[]) => {
  * Prints boxes to console (including children)
  */
 const printBoxes = (boxes: Box[]) => {
-  console.info(toStringBoxes(boxes))
+  console.info('Media file structure:\n\n' + toStringBoxes(boxes))
 }
 
 /**
@@ -31,7 +25,7 @@ const printBoxData = (boxes: Box[]) => {
   const text = boxes.map(box => {
     const data = box.data ? binaryToText(box.data, 'utf-8') : ''
 
-    return `${box.type}, byte index: ${box.position}, size: ${box.size} B\n\n${data}`
+    return `Box type: ${box.type}, byte index: ${box.position}, size: ${box.size} B, Content:\n\n${data}`
   }).join('\n')
 
   console.info(text)
