@@ -2,6 +2,8 @@ import React from 'react'
 import './app.css'
 
 const MP4_URI = 'video.mp4'
+// To find out the code use
+// https://nickdesaulniers.github.io/mp4info/
 const MIME_CODEC = 'video/mp4; codecs="avc1.640020, mp4a.40.2"'
 
 /**
