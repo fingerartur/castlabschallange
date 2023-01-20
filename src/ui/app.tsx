@@ -1,10 +1,42 @@
 import React from 'react'
 import './app.css'
 
-const MP4_URI = 'video.mp4'
-// To find out the code use
-// https://nickdesaulniers.github.io/mp4info/
-const MIME_CODEC = 'video/mp4; codecs="avc1.640020, mp4a.40.2"'
+type Video = {
+  uri: string
+  /**
+   * Use https://nickdesaulniers.github.io/mp4info/ to find out MIME
+   */
+  mime: string
+  /**
+   * Seconds
+   */
+  duration: number
+  /**
+   * Seconds
+   */
+  offset: number
+}
+
+const videos: Video[] = [
+  {
+    uri: 'video.mp4',
+    mime: 'video/mp4; codecs="avc1.640020, mp4a.40.2"',
+    duration: 10,
+    offset: 0,
+  },
+  {
+    uri: 'video3.mp4',
+    mime: 'video/mp4; codecs="avc1.64001f, mp4a.40.2"',
+    duration: 8,
+    offset: 10,
+  },
+  {
+    uri: 'video2.mp4',
+    mime: 'video/mp4; codecs="avc1.64001f"',
+    duration: 15,
+    offset: 18,
+  },
+]
 
 /**
  * UI root
@@ -30,16 +62,17 @@ const run = () => {
     return
   }
 
-  play(video, MP4_URI, MIME_CODEC)
+  play(video, videos)
 }
 
 let id = 0 
 
-const play = (video: HTMLVideoElement, uri: string, mimeCodec: string) => {
-  if (!MediaSource.isTypeSupported(mimeCodec)) {
-    console.error('Unsupported MIME type or codec: ', mimeCodec)
-    return
-  }
+const play = (videoEl: HTMLVideoElement, videos: Video[]) => {
+  videos.forEach(video => {
+    if (!MediaSource.isTypeSupported(video.mime)) {
+      throw new Error(`Unsupported MIME type or codec: ${video.mime}`)
+    }
+  })
 
   id ++
   
@@ -47,41 +80,58 @@ const play = (video: HTMLVideoElement, uri: string, mimeCodec: string) => {
   console.info(`MediaSource ready state #${id} - initial`, mediaSource.readyState)
 
   console.info('Attaching MediaSource to video element src...')
-  video.src = URL.createObjectURL(mediaSource)
+  videoEl.src = URL.createObjectURL(mediaSource)
 
   mediaSource.addEventListener('sourceopen', () => console.info(`MediaSource #${id} ready state -> open`))
-  mediaSource.addEventListener('sourceended',  () => console.info(`MediaSource #${id} ready state -> ended`))
-  mediaSource.addEventListener('sourceclose',  () => console.info(`MediaSource #${id} ready state -> closed`))
+  mediaSource.addEventListener('sourceended', () => console.info(`MediaSource #${id} ready state -> ended`))
+  mediaSource.addEventListener('sourceclose', () => console.info(`MediaSource #${id} ready state -> closed`))
 
   mediaSource.addEventListener('sourceopen', async () => {
-    await loadMediaSourceData(mediaSource, uri, mimeCodec, () => {
-      console.info('First buffer appended, playing video...')
-      video.play()
-    })
+    mediaSource.duration = videos.map(video => video.duration)
+      .reduce((a, b) => a + b, 0)
+
+    const dummyMime = 'video/mp4; codecs="avc1.640020, mp4a.40.2"'
+    const sourceBuffer = mediaSource.addSourceBuffer(dummyMime)
+
+    sourceBuffer.addEventListener('error', (error) => console.error('SourceBuffer error', error))
+    sourceBuffer.addEventListener('abort', () => console.error('SourceBuffer abort'))
+
+    for (let i = 0; i < videos.length; i++) {
+      const video = videos[i]
+
+      await loadMediaSourceData(sourceBuffer, video, () => {
+        console.info('First buffer appended, playing video...')
+        videoEl.play()
+      })
+    }
+
+    mediaSource.endOfStream()
   })
 }
 
-/**
- * Load media source data as one request and append it to media source.
- * 
- * Resolves when media source has all the data of the video.
- */
-const loadMediaSourceData = (mediaSource: MediaSource, uri: string, mimeCodec: string, onFirstBuffer: () => void) => {
+const loadMediaSourceData = (sourceBuffer: SourceBuffer, video: Video, onFirstBuffer?: () => void) => {
+  const CHUNK_COUNT = 3
+  const CHUNK_TIMEOUT = 100
+
   return new Promise<void>(async resolve => {
-    const sourceBuffer = mediaSource.addSourceBuffer(mimeCodec)
-    const binary = await fetchBinary(uri)
-    const buffers = split(binary, 20)
+    
+    sourceBuffer.changeType(video.mime)
+    sourceBuffer.timestampOffset = video.offset
+
+    const binary = await fetchBinary(video.uri)
+    const buffers = split(binary, CHUNK_COUNT)
     const bufferQueue = new BufferQueue(buffers)
 
-    sourceBuffer.addEventListener('updatestart', () => {
+    const onUpdateStart = () => {
       console.info('Buffer update started', bufferQueue.current?.order)
-    })
+    }
+    sourceBuffer.addEventListener('updatestart', onUpdateStart)
 
-    sourceBuffer.addEventListener('updateend', () => {
+    const onUpdateEnd = () => {
       console.info('Buffer update ended', bufferQueue.current?.order)
 
       if (bufferQueue.current?.order === 1) {
-        onFirstBuffer()
+        onFirstBuffer?.()
       }
 
       bufferQueue.next()
@@ -90,12 +140,14 @@ const loadMediaSourceData = (mediaSource: MediaSource, uri: string, mimeCodec: s
       if (current) {
         setTimeout(() => {
           sourceBuffer.appendBuffer(current.buffer)
-        }, 1_000)
+        }, CHUNK_TIMEOUT)
       } else {
-        mediaSource.endOfStream()
+        sourceBuffer.removeEventListener('updatestart', onUpdateStart)
+        sourceBuffer.removeEventListener('updateend', onUpdateEnd)
         resolve()
       }
-    })
+    }
+    sourceBuffer.addEventListener('updateend', onUpdateEnd)
     
     bufferQueue.next()
     if (bufferQueue.current) {
