@@ -36,9 +36,10 @@ npx get-video-mime ./public/video2.mp4
 
 https://stackoverflow.com/questions/8616855/how-to-output-fragmented-mp4-with-ffmpeg
 
-```
-ffmpeg -re -i infile.ext -g 52 \
--c:a aac -b:a 64k -c:v libx264 -b:v 448k \
--f mp4 -movflags frag_keyframe+empty_moov \
-output.mp4
-```
+## Notes on MediaSource
+1. appendBuffer takes any chunk, it does not have to be logical segment - I do not have to parse MP4 before sending it there, i can just chunk it very stupidly and send it to `SourceBuffer.appendBuffer`.
+2. The MP4 that I send to MSE must be a specific MP4. Not all MP4s are supported! I am not talking about a codec. [The MP4 must be formatted with `ffmpeg -movflags frag_keyframe+empty_moov+default_base_moof`](https://developer.mozilla.org/en-US/docs/Web/API/Media_Source_Extensions_API/Transcoding_assets_for_MSE).
+   1. This is pretty badly documented on MDN, that is why [somebody is complaining here](https://stackoverflow.com/questions/42234078/html5-mediasource-works-with-some-mp4-files-and-not-with-others-same-codecs), it should be documented better.
+3. When feeding MP4 via MSE I see the following
+   1. When MediaSource does not have enough data, it is buffering
+   2. Until **all** the data of the whole MP4 has been fed into MediaSource, the progress bar does not work (progress is cca 95% and duration is unknown). Maybe it is possible to format the MP4 in a better way so that the duration is known.
