@@ -29,3 +29,16 @@ It would be possible to optimize RAM usage by reading the MP4 file as a stream, 
 
 If images contained in the XML file are relatively small compared to the overall size of the XML file, their extraction could also be optimized by using a SAX parer that parses XML sequentially instead of parsing the whole DOM tree.
 
+```
+npx get-video-mime ./public/video2.mp4
+```
+
+
+https://stackoverflow.com/questions/8616855/how-to-output-fragmented-mp4-with-ffmpeg
+
+```
+ffmpeg -re -i infile.ext -g 52 \
+-c:a aac -b:a 64k -c:v libx264 -b:v 448k \
+-f mp4 -movflags frag_keyframe+empty_moov \
+output.mp4
+```
